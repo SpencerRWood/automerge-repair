@@ -3,6 +3,7 @@
 from dagster import (
     OpExecutionContext,
     Out,
+    in_process_executor,
     job,
     json_console_logger,
     mem_io_manager,
@@ -20,6 +21,7 @@ def runtime_smoke(context: OpExecutionContext) -> str:
 
 
 @job(
+    executor_def=in_process_executor,
     resource_defs={"io_manager": mem_io_manager},
     logger_defs={"console": json_console_logger},
     config={"loggers": {"console": {"config": {"log_level": "INFO"}}}},
@@ -45,6 +47,7 @@ def foundation_health(context: OpExecutionContext) -> dict[str, str | int]:
 
 
 @job(
+    executor_def=in_process_executor,
     resource_defs={"io_manager": mem_io_manager},
     logger_defs={"console": json_console_logger},
     config={"loggers": {"console": {"config": {"log_level": "INFO"}}}},
