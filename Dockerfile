@@ -14,4 +14,4 @@ WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
-CMD ["sh", "-c", "exec dagster api grpc -m template_python_dagster.dagster.definitions -h 0.0.0.0 -p \"${DAGSTER_GRPC_PORT:?DAGSTER_GRPC_PORT is required}\""]
+CMD ["sh", "-c", "exec dagster api grpc -m automerge_repair.dagster.definitions -h 0.0.0.0 -p \"${DAGSTER_GRPC_PORT:?DAGSTER_GRPC_PORT is required}\""]
