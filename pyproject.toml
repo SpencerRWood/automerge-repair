@@ -3,9 +3,9 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "template-python-dagster"
+name = "automerge-repair"
 version = "0.1.0"
-description = "A typed Python template for Dagster code locations and orchestrated workloads."
+description = "Bounded recovery orchestration for Renovate automerge failures."
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
@@ -19,7 +19,12 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Typing :: Typed",
 ]
-dependencies = ["dagster>=1.12,<2"]
+dependencies = [
+  "dagster==1.13.16",
+  "dagster-postgres==0.29.16",
+  "sqlalchemy==2.0.52",
+  "psycopg2-binary==2.9.13",
+]
 
 [dependency-groups]
 dev = [
@@ -34,7 +39,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/template_python_dagster"]
+packages = ["src/automerge_repair"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -54,7 +59,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["template_python_dagster"]
+source = ["automerge_repair"]
 
 [tool.coverage.report]
 fail_under = 90
@@ -142,3 +147,9 @@ token = { env = "GITHUB_TOKEN" }
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = true
+
+[tool.wood.openproject]
+project_id = 8
+initiative_id = 477
+release_id = 23
+epic_id = 478

@@ -4,10 +4,20 @@ version = 1
 version = "3.14"
 
 [validation]
-checks = ["ruff", "ruff-format", "mypy", "pytest", "pre-commit"]
+checks = ["ruff", "ruff-format", "mypy", "pytest", "pytest-coverage", "pre-commit"]
+
+[coverage]
+target = "automerge_repair"
 
 [build]
 python_package = true
 
 [release]
 semantic_release = true
+
+[container]
+publish = true
+
+[dagster]
+runtime_validation = true
+smoke_job = "runtime_smoke_job"

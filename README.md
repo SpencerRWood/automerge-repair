@@ -1,88 +1,97 @@
-# template-python-dagster
+# automerge-repair
 
-A typed Python starting point for Dagster code locations that run scheduled, asset-oriented, sensor-driven, or otherwise orchestrated workloads. It is suitable for reporting, ingestion, sync, and similar workflows. The examples run without external services.
+Python/Dagster foundation for bounded recovery from Renovate automerge failures
+in infrastructure and homelab. S1 registers two read-only jobs:
+`runtime_smoke_job` proves Dagster execution without application secrets;
+`foundation_health_job` validates the configured repository policy and emits
+non-secret structured logs and run metadata.
 
-## Choose a template
-
-| Template | Use it for |
-| --- | --- |
-| `template-python-analytics` | Reusable analysis and transformation workflows without orchestration. |
-| `template-python-dagster` | Scheduled, asset-oriented, sensor-driven, or orchestrated workloads. |
-| `template-fastapi-service` | Long-running HTTP/API applications. |
-
-## Structure
-
-```text
-src/template_python_dagster/
-  __init__.py
-  py.typed
-  config.py
-  models.py
-  transforms.py
-  validation.py
-  io/
-    __init__.py
-    readers.py
-    writers.py
-  dagster/
-    __init__.py
-    assets.py
-    jobs.py
-    resources.py
-    schedules.py
-    sensors.py
-    definitions.py
-tests/
-Dockerfile
-.github/release.toml
-```
-
-`dagster/definitions.py` exports `defs`, a `dagster.Definitions` object. The one example asset, job, resource, and schedule show registration and execution. Delete any examples you do not need and remove their imports and entries from `defs`; no other architecture needs to change. `sensors.py` is empty until a consuming project needs a sensor. The other package modules remain small placeholders for application logic.
+Created from the tracked files of SpencerRWood/template-python-dagster main
+at 2b7d901. The package is renamed to `automerge_repair`; example assets and
+schedules are replaced with foundation checks. Application logic stays here;
+infrastructure owns the code-location container, secrets, network and workspace.
 
 ## Local development
 
-Python 3.14, `uv`, Hatchling, Ruff, strict mypy, pytest, pre-commit, and conventional commits follow the analytics template.
+Use Python 3.14 and uv:
 
 ```sh
-uv lock
 uv sync --frozen --group dev
 uv run pre-commit install
-uv run dagster dev -m template_python_dagster.dagster.definitions
+AUTOMERGE_REPAIR_POLICY_FILE=config/policy.toml uv run dagster api grpc -m automerge_repair.dagster.definitions -h 127.0.0.1 -p 4000
+wood repo validate --json
 ```
 
-The local Dagster command starts the UI and daemon. The example schedule is defined in code; enable it in the UI if you want it to run. It does not need an external service. Set `APP_MESSAGE` to change the example resource value. Add real runtime settings as typed fields in `config.py`; inject secrets through environment variables at deployment time (for example, with Infisical). Do not put credentials in source control.
+The committed policy allows infrastructure and homelab in dev, with repair
+disabled and rollback set to notification-only. Missing policy, unknown fields,
+repositories outside R1, malformed types, and an unsupported runtime environment
+fail closed. Policy contains no credentials. The 300-second verification window
+is an explicit initial policy value and performs no recovery action in S1.
 
-Run the quality gates:
+The Dagster 1.13.16 / dagster-postgres 0.29.16 / SQLAlchemy 2.0.52 runtime family
+matches the current infrastructure main contract. The lockfile also explicitly
+selects psycopg2-binary. Review these versions together.
+
+## Build and development deployment
 
 ```sh
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
-uv run pytest
-uv build
-uv run pre-commit run --all-files
+docker build -t automerge-repair .
+docker run --rm -e DAGSTER_GRPC_PORT=4000 -p 4000:4000 automerge-repair
 ```
 
-## Container and shared deployment
+Centralized validation and integrated semantic/GHCR release use the existing
+SpencerRWood/workflows `validate.yml@v3` and `release-container.yml@v3` contracts.
+The container release opts into the PostgreSQL-backed runtime gate through
+`.github/release.toml`; image validation precedes GitHub Release publication.
+The deployed image must be a real `vX.Y.Z@sha256:...` reference.
 
-Build and run the code-location gRPC server:
+Infrastructure S1 changes live on `feature/op-479-automerge-repair-runtime`.
+The `automerge_repair` Ansible role runs the code location on the private
+Postgres and proxy networks. The workspace registers it only when
+`services.automerge_repair` is enabled. The initial manifest keeps it disabled;
+there is no released image yet.
 
-```sh
-docker build -t template-python-dagster .
-docker run --rm -e DAGSTER_GRPC_PORT=4000 -p 4000:4000 template-python-dagster
-```
+After review, deliver the service to the configured GitHub remote and record
+the verified release image in infrastructure dev.
+Provision the scoped Infisical dev path `/automerge-repair` with the shared
+`DAGSTER_POSTGRES_PASSWORD` before enabling the component. Infrastructure's
+resolver owns the protected runtime file; the application never receives a
+machine identity credential. The role registers that scoped path in the existing
+runtime refresh metadata when enabled. No production service is selected.
 
-The container loads `template_python_dagster.dagster.definitions` with `dagster api grpc`. It takes the listener port from `DAGSTER_GRPC_PORT`; choose that port in the consuming deployment. The image has no deployment hostname, secrets, or service address. Keep the Dagster version compatible with the shared deployment and provide any application configuration at runtime.
+The normal reviewed infrastructure release/deploy path applies the role and
+checks gRPC readiness. Run `foundation_health_job` through the shared Dagster
+instance to prove the mounted policy and PostgreSQL-backed run/event storage.
+Do not claim deployment from a passing local test or a published image alone.
 
-The consuming application owns its assets, jobs, schedules, and sensors. The shared infrastructure repository only builds/deploys the image, injects runtime environment and secrets, and registers its gRPC endpoint as a code location in the Dagster workspace. For example, infrastructure can configure a `grpc_server` entry with `host`, `port`, and `location_name` matching its deployed container; those values belong in infrastructure configuration, not this template. The shared Dagster daemon evaluates schedules and sensors registered from the application code location. Infrastructure should not duplicate their definitions.
+## R1 boundaries
 
-The release caller uses the centralized `SpencerRWood/workflows` release and validation contracts at `@v1`. A copied project can use the shared container release workflow to publish its own image after a release.
+Later stories implement the authoritative incident state, aligned deterministic
+rollback contract, wood-events-service Telegram interactions, codex-runtime
+capacity and reset handling, approval gates and isolated repair execution.
+Capacity deferral consumes no repair attempt. PR merge stays a human gate and
+redeployment requires explicit approval. This foundation invokes no recovery,
+Codex, Telegram, GitHub or OpenProject APIs.
 
-## Copy and rename
+Planning: OpenProject Story 479 / AR-R1-S1, Project 8, Initiative 477, Epic 478,
+Version 23 (R1).
 
-1. Create a new repository and copy this template's tracked files.
-2. Replace `template-python-dagster` with the new distribution/repository name and `template_python_dagster` with the new import package name in `pyproject.toml`, `src/`, `tests/`, `Dockerfile`, `.github/`, and this README. Rename the package directory. Keep the module path in the Docker command and local Dagster command aligned.
-3. Update the package description, runtime settings, assets, resources, jobs, schedules, and sensors for the application. Remove unused examples and their `Definitions` entries.
-4. Run `uv lock`, `uv sync --frozen --group dev`, and the quality gates above. Build and test the container before registering its code location in shared infrastructure.
+## Shared Codex capacity implementation contract
 
-The semantic-release setup uses conventional commits and `v`-prefixed tags. `.github/release.toml` declares Python package validation and build capabilities for the centralized workflow.
+Story 470 / AD-R1-01 supplies the `codex-runtime` library. Later capacity
+integration must pin its delivered release/revision and consume
+`codex_runtime.check_availability(AppServerProvider())`; provider response parsing
+and five-hour/weekly reset normalization belong exclusively to that library.
+Use the same authenticated Codex runtime/account for capacity reads and execution.
+
+Proceed only when the normalized `available` field is true. Otherwise persist
+incident deferral. When `provider_resets_at` is known, compute `next_retry_at`
+as that latest blocking provider reset plus five minutes. When it is unknown,
+remain deferred under consumer failure policy; never infer recovery or invent
+a reset. Recheck capacity before execution after the boundary. Capacity
+deferral consumes no repair attempt and does not bypass policy or approval gates.
+
+The authoritative contract and offline consumer examples live in
+[codex-runtime](https://github.com/SpencerRWood/codex-runtime/blob/main/docs/consumer-contract.md).
+This foundation adds no quota checker or capacity execution; runtime integration,
+durable state, retry scheduling and attempt accounting remain later Story work.
