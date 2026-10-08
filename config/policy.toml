@@ -1,11 +1,19 @@
 # Non-secret R1 policy. Enabling actions belongs to later implementation stories.
 [repositories.infrastructure]
+full_name = "SpencerRWood/infrastructure"
+renovate_login = "renovate[bot]"
+automerge_mode = "platform-squash"
+deployment_environments = { dev = "infrastructure-dev" }
 environments = ["dev"]
 rollback = "notification-only"
 repair_enabled = false
 verification_window_seconds = 300
 
 [repositories.homelab]
+full_name = "SpencerRWood/homelab"
+renovate_login = "renovate[bot]"
+automerge_mode = "platform-squash"
+deployment_environments = { dev = "homelab" }
 environments = ["dev"]
 rollback = "notification-only"
 repair_enabled = false

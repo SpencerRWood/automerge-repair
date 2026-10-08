@@ -1,10 +1,17 @@
 # automerge-repair
 
 Python/Dagster foundation for bounded recovery from Renovate automerge failures
-in infrastructure and homelab. S1 registers two read-only jobs:
+in infrastructure and homelab. Foundation jobs:
 `runtime_smoke_job` proves Dagster execution without application secrets;
 `foundation_health_job` validates the configured repository policy and emits
 non-secret structured logs and run metadata.
+
+Story #481 adds `incident_ingest_job`, the explicit incident-state and failure
+provenance entrypoint. It verifies normalized evidence, persists the incident and
+concurrency claims transactionally, and emits structured Dagster audit metadata.
+See [the incident contract](docs/incident-contract.md) for the trusted collector
+boundary, release lineage, storage configuration, state transitions, and retry
+semantics. It performs no recovery actions.
 
 Created from the tracked files of SpencerRWood/template-python-dagster main
 at 2b7d901. The package is renamed to `automerge_repair`; example assets and
@@ -66,12 +73,14 @@ Do not claim deployment from a passing local test or a published image alone.
 
 ## R1 boundaries
 
-Later stories implement the authoritative incident state, aligned deterministic
-rollback contract, wood-events-service Telegram interactions, codex-runtime
+Story #481 owns authoritative incident state and Renovate failure provenance.
+Later stories integrate the aligned deterministic rollback contract,
+wood-events-service Telegram interactions, codex-runtime
 capacity and reset handling, approval gates and isolated repair execution.
 Capacity deferral consumes no repair attempt. PR merge stays a human gate and
 redeployment requires explicit approval. This foundation invokes no recovery,
-Codex, Telegram, GitHub or OpenProject APIs.
+Codex, Telegram or OpenProject APIs. Read-only GitHub provenance enrichment is
+available through an injected authenticated reader; monitoring is not enabled.
 
 Planning: OpenProject Story 479 / AR-R1-S1, Project 8, Initiative 477, Epic 478,
 Version 23 (R1).

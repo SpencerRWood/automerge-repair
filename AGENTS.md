@@ -7,4 +7,6 @@
 - R1 covers Renovate automerge failures only.
 - Preserve runtime_smoke_job as a read-only, secret-free infrastructure check.
 - Do not implement rollback exceptions, Codex quota parsing, or Telegram transport here.
-- Incident state, capacity integration, approval gates, and repair execution belong to later Stories.
+- Incident state and provenance are owned here by Story #481. Capacity integration,
+  approval transport, recovery actions, and repair execution remain later Stories.
+- Persist transitions and audit evidence atomically; external artifacts are projections.
