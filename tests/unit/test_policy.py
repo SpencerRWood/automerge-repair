@@ -37,6 +37,17 @@ def test_missing_policy_fails_closed() -> None:
         ("verification_window_seconds = 300", "verification_window_seconds = 0"),
         ("verification_window_seconds = 300", "verification_window_seconds = true"),
         ("repair_enabled = false", 'repair_enabled = false\npassword = "forbidden"'),
+        ('full_name = "SpencerRWood/infrastructure"', 'full_name = "infrastructure"'),
+        ('renovate_login = "renovate[bot]"', 'renovate_login = "human"'),
+        ('automerge_mode = "platform-squash"', 'automerge_mode = "unknown"'),
+        (
+            'deployment_environments = { dev = "infrastructure-dev" }',
+            'deployment_environments = { prod = "infrastructure-dev" }',
+        ),
+        (
+            'deployment_environments = { dev = "infrastructure-dev" }',
+            'deployment_environments = { dev = "" }',
+        ),
     ],
 )
 def test_invalid_policy_is_rejected(

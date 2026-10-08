@@ -1,6 +1,7 @@
 """Non-secret policy; runtime credentials are injected by Infisical."""
 
 import os
+import re
 import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -19,6 +20,10 @@ class RepositoryPolicy:
     rollback: RollbackMode
     repair_enabled: bool
     verification_window_seconds: int
+    full_name: str
+    renovate_login: str
+    deployment_environments: tuple[tuple[str, str], ...]
+    automerge_mode: Literal["platform-squash"]
 
 
 @dataclass(frozen=True)
@@ -27,6 +32,10 @@ class AppConfig:
 
     environment: str
     repositories: tuple[RepositoryPolicy, ...]
+
+    def repository_policy(self, full_name: str) -> RepositoryPolicy | None:
+        """Exact owner/repository lookup; short names cannot authorize ingress."""
+        return next((p for p in self.repositories if p.full_name == full_name), None)
 
 
 def load_config(environ: Mapping[str, str] | None = None) -> AppConfig:
@@ -48,6 +57,10 @@ def load_config(environ: Mapping[str, str] | None = None) -> AppConfig:
         if name not in {"infrastructure", "homelab"}:
             raise ValueError("Repository is outside the R1 allowlist")
         fields = {
+            "full_name",
+            "renovate_login",
+            "deployment_environments",
+            "automerge_mode",
             "environments",
             "rollback",
             "repair_enabled",
@@ -73,6 +86,23 @@ def load_config(environ: Mapping[str, str] | None = None) -> AppConfig:
         }:
             raise ValueError("Unknown rollback mode")
         repair_enabled = policy["repair_enabled"]
+        full_name = policy["full_name"]
+        login = policy["renovate_login"]
+        targets = policy["deployment_environments"]
+        if (
+            not isinstance(full_name, str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+/" + name, full_name)
+            or login != "renovate[bot]"
+            or policy["automerge_mode"] != "platform-squash"
+            or not isinstance(targets, dict)
+            or set(targets) != set(environments)
+            or any(
+                not isinstance(t, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", t)
+                for t in targets.values()
+            )
+            or len(set(targets.values())) != len(targets)
+        ):
+            raise ValueError("Repository identity or deployment environment is invalid")
         window = policy["verification_window_seconds"]
         if type(repair_enabled) is not bool or type(window) is not int or window <= 0:
             raise ValueError("Repair flag and verification window are invalid")
@@ -83,6 +113,10 @@ def load_config(environ: Mapping[str, str] | None = None) -> AppConfig:
                 cast(RollbackMode, rollback),
                 repair_enabled,
                 window,
+                full_name,
+                login,
+                tuple(sorted(targets.items())),
+                "platform-squash",
             )
         )
     if environment not in {"dev", "prod"}:

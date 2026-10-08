@@ -24,6 +24,7 @@ dependencies = [
   "dagster-postgres==0.29.16",
   "sqlalchemy==2.0.52",
   "psycopg2-binary==2.9.13",
+  "pydantic==2.13.4",
 ]
 
 [dependency-groups]
