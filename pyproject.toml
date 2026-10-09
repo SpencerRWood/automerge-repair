@@ -154,3 +154,8 @@ project_id = 8
 initiative_id = 477
 release_id = 23
 epic_id = 478
+
+[tool.wood.architecture]
+domain = "engineering"
+capability = "release-promotion"
+kind = "orchestration-service"
