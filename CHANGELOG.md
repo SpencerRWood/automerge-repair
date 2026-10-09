@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.1 (2026-10-09)
+
+### Bug Fixes
+
+- Include architecture metadata in released artifacts
+  ([`436ebaa`](https://github.com/SpencerRWood/automerge-repair/commit/436ebaaef271ef674960453debb646aa3f40e430))
+
+
 ## v0.2.0 (2026-10-08)
 
 ### Features
