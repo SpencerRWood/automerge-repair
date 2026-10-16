@@ -1,3 +1,4 @@
+import re
 import tomllib
 from importlib import import_module
 from pathlib import Path
@@ -48,8 +49,9 @@ def test_docker_entrypoint_targets_definitions_module() -> None:
 
 def test_centralized_release_contract() -> None:
     workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-    assert (
-        "SpencerRWood/workflows/.github/workflows/release-container.yml@v3" in workflow
+    assert re.search(
+        r"SpencerRWood/workflows/\.github/workflows/release-container\.yml@[0-9a-f]{40}",
+        workflow,
     )
     release_config = tomllib.loads(
         (ROOT / ".github/release.toml").read_text(encoding="utf-8")
@@ -61,4 +63,7 @@ def test_centralized_release_contract() -> None:
     assert "pytest-coverage" in release_config["validation"]["checks"]
     assert release_config["coverage"]["target"] == "automerge_repair"
     validation = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
-    assert "SpencerRWood/workflows/.github/workflows/validate.yml@v3" in validation
+    assert re.search(
+        r"SpencerRWood/workflows/\.github/workflows/validate\.yml@[0-9a-f]{40}",
+        validation,
+    )

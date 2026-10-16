@@ -1,12 +1,24 @@
-name: Release
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  release:
-    uses: SpencerRWood/workflows/.github/workflows/release-container.yml@v3
-    permissions:
-      contents: write
-      packages: write
+{
+  "name": "Release",
+  "on": {
+    "push": {
+      "branches": [
+        "main"
+      ]
+    }
+  },
+  "jobs": {
+    "release": {
+      "uses": "SpencerRWood/workflows/.github/workflows/release-container.yml@9748b1cd6287d84d55c4277c93ca5dae01fb1787",
+      "permissions": {
+        "contents": "write",
+        "packages": "write",
+        "id-token": "write",
+        "attestations": "write"
+      },
+      "with": {
+        "workflow_revision": "9748b1cd6287d84d55c4277c93ca5dae01fb1787"
+      }
+    }
+  }
+}
